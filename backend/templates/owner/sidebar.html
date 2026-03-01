@@ -1,0 +1,61 @@
+<!-- Sidebar Component -->
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <i class="bi bi-car-front-fill"></i>
+        <span>Owner</span>
+    </div>
+    <div class="sidebar-menu">
+        <a href="{% url 'owner_dashboard' %}"
+            class="sidebar-item {% if request.resolver_match.url_name == 'owner_dashboard' %}active{% endif %}"
+            data-section="dashboard">
+            <i class="bi bi-grid-1x2"></i> Overview
+        </a>
+        <a href="{% url 'owner_staff' %}"
+            class="sidebar-item {% if request.resolver_match.url_name == 'owner_staff' %}active{% endif %}"
+            data-section="staff">
+            <i class="bi bi-people"></i> Staff
+        </a>
+        <a href="{% url 'owner_vehicles' %}"
+            class="sidebar-item {% if request.resolver_match.url_name == 'owner_vehicles' %}active{% endif %}"
+            data-section="vehicles">
+            <i class="bi bi-truck"></i> Vehicles
+        </a>
+        <a href="{% url 'owner_bookings' %}"
+            class="sidebar-item {% if request.resolver_match.url_name == 'owner_bookings' %}active{% endif %}"
+            data-section="bookings">
+            <i class="bi bi-calendar-check"></i> Bookings
+        </a>
+        <a href="{% url 'owner_chat' %}"
+            class="sidebar-item {% if request.resolver_match.url_name == 'owner_chat' %}active{% endif %}"
+            data-section="chat">
+            <i class="bi bi-chat-dots"></i> Chat
+        </a>
+        <a href="{% url 'owner_reviews' %}"
+            class="sidebar-item {% if request.resolver_match.url_name == 'owner_reviews' %}active{% endif %}"
+            data-section="reviews">
+            <i class="bi bi-star-half"></i> Reviews
+        </a>
+        <a href="{% url 'owner_complaints' %}"
+            class="sidebar-item {% if request.resolver_match.url_name == 'owner_complaints' %}active{% endif %}"
+            data-section="complaints">
+            <i class="bi bi-exclamation-triangle"></i> Complaints
+        </a>
+        <a href="{% url 'owner_kyc' %}"
+            class="sidebar-item {% if request.resolver_match.url_name == 'owner_kyc' %}active{% endif %}"
+            data-section="kyc">
+            <i class="bi bi-person-vcard"></i> KYC Verification
+        </a>
+        <a href="{% url 'owner_profile' %}"
+            class="sidebar-item {% if request.resolver_match.url_name == 'owner_profile' %}active{% endif %}"
+            data-section="profile">
+            <i class="bi bi-person-gear"></i> Settings
+        </a>
+    </div>
+    <div class="sidebar-footer">
+        <button
+            class="btn btn-sm text-white bg-white bg-opacity-10 w-full justify-center hover:bg-opacity-20 flex gap-2"
+            id="logoutBtn">
+            <i class="bi bi-box-arrow-right"></i> Logout
+        </button>
+    </div>
+</nav>

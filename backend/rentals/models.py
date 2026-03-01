@@ -183,6 +183,10 @@ class KYCDocument(models.Model):
     status = models.CharField(max_length=20, choices=KYC_STATUS, default='not_submitted')
     submitted_at = models.DateTimeField(auto_now_add=True)
     verified_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True, null=True)
+    reviewed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='kyc_reviews'
+    )
 
     def __str__(self):
         return f"KYC - {self.user.username}"

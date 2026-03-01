@@ -1,0 +1,514 @@
+{% extends 'owner/base.html' %}
+
+{% block title %}KYC Detail – {{ kyc.full_name }}{% endblock %}
+
+{% block page_title %}KYC Detail{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #64748b;
+        margin-bottom: 4px;
+    }
+
+    .detail-value {
+        font-size: 1rem;
+        font-weight: 500;
+        color: #1e293b;
+    }
+
+    .detail-value.mono {
+        font-family: 'Courier New', monospace;
+        font-size: 0.95rem;
+        background: #f1f5f9;
+        padding: 4px 10px;
+        border-radius: 6px;
+        display: inline-block;
+    }
+
+    .section-card {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 2px 14px rgba(0, 0, 0, 0.07);
+    }
+
+    .section-card .card-header {
+        border-radius: 16px 16px 0 0 !important;
+        background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+        color: #fff;
+        border: none;
+        padding: 16px 20px;
+    }
+
+    .section-card .card-header.green {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    }
+
+    .section-card .card-header.orange {
+        background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+    }
+
+    .doc-photo-box {
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px;
+        background: #f8fafc;
+        text-align: center;
+        min-height: 160px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .doc-photo-box img {
+        max-height: 220px;
+        max-width: 100%;
+        border-radius: 8px;
+        object-fit: contain;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .kyc-badge-pending {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffc107;
+    }
+
+    .kyc-badge-verified {
+        background: #d1e7dd;
+        color: #0f5132;
+        border: 1px solid #198754;
+    }
+
+    .kyc-badge-rejected {
+        background: #f8d7da;
+        color: #842029;
+        border: 1px solid #dc3545;
+    }
+
+    .kyc-badge-not_submitted {
+        background: #e2e3e5;
+        color: #41464b;
+        border: 1px solid #adb5bd;
+    }
+
+    .action-bar {
+        position: sticky;
+        bottom: 0;
+        background: #fff;
+        border-top: 1px solid #e2e8f0;
+        padding: 16px 24px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: flex-end;
+        z-index: 100;
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .field-row {
+        padding: 12px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .field-row:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+            <!-- Back Button + Status -->
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <a href="{% url 'owner_kyc' %}" class="btn btn-light border rounded-pill px-3 fw-medium">
+                    <i class="bi bi-arrow-left me-2"></i>Back to KYC List
+                </a>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge px-4 py-2 rounded-pill fs-6 kyc-badge-{{ kyc.status }}">
+                        {% if kyc.status == 'pending' %}<i class="bi bi-hourglass-split me-1"></i>
+                        {% elif kyc.status == 'verified' %}<i class="bi bi-patch-check-fill me-1"></i>
+                        {% elif kyc.status == 'rejected' %}<i class="bi bi-x-circle-fill me-1"></i>
+                        {% else %}<i class="bi bi-dash-circle me-1"></i>{% endif %}
+                        {{ kyc.get_status_display }}
+                    </span>
+                    <span class="text-muted small">#KYC-{{ kyc.id|stringformat:"04d" }}</span>
+                </div>
+            </div>
+
+            {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show shadow-sm border-0 d-flex align-items-center"
+                    role="alert" style="border-radius: var(--radius-lg);">
+                    {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill fs-5 text-success me-3"></i>
+                    {% elif message.tags == 'error' or message.tags == 'danger' %}<i
+                        class="bi bi-exclamation-triangle-fill fs-5 text-danger me-3"></i>
+                    {% else %}<i class="bi bi-info-circle-fill fs-5 text-info me-3"></i>{% endif %}
+                    <div class="fw-medium">{{ message }}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="row g-4">
+
+                <!-- LEFT COLUMN -->
+                <div class="col-lg-4">
+
+                    <!-- Account Info -->
+                    <div class="card section-card mb-4">
+                        <div class="card-header">
+                            <i class="bi bi-person-circle me-2"></i><strong>Account Information</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <img src="https://ui-avatars.com/api/?name={{ kyc.user.first_name|default:kyc.user.username|urlencode }}&background=4F46E5&color=fff&size=80&rounded=true"
+                                    width="80" height="80" alt="Avatar" class="shadow">
+                                <div class="fw-bold mt-2 fs-5">{{ kyc.user.first_name }} {{ kyc.user.last_name }}</div>
+                                <div class="text-muted small">{{ kyc.user.email }}</div>
+                            </div>
+                            <div class="field-row">
+                                <div class="detail-label">Username</div>
+                                <div class="detail-value mono">{{ kyc.user.username }}</div>
+                            </div>
+                            <div class="field-row">
+                                <div class="detail-label">Account Joined</div>
+                                <div class="detail-value">{{ kyc.user.date_joined|date:"d M Y" }}</div>
+                            </div>
+                            <div class="field-row">
+                                <div class="detail-label">KYC Submitted</div>
+                                <div class="detail-value">{{ kyc.submitted_at|date:"d M Y, H:i" }}</div>
+                            </div>
+                            {% if kyc.verified_at %}
+                            <div class="field-row">
+                                <div class="detail-label">Reviewed At</div>
+                                <div class="detail-value">{{ kyc.verified_at|date:"d M Y, H:i" }}</div>
+                            </div>
+                            {% endif %}
+                            {% if kyc.reviewed_by %}
+                            <div class="field-row">
+                                <div class="detail-label">Reviewed By</div>
+                                <div class="detail-value">{{ kyc.reviewed_by.first_name }} {{ kyc.reviewed_by.last_name }}</div>
+                            </div>
+                            {% endif %}
+                            {% if kyc.status == 'rejected' and kyc.rejection_reason %}
+                            <div class="mt-3 p-3 rounded-3" style="background:#fff5f5;border:1px solid #fecaca;">
+                                <div class="detail-label text-danger mb-1"><i class="bi bi-x-circle me-1"></i>Rejection
+                                    Reason</div>
+                                <div class="small text-danger">{{ kyc.rejection_reason }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- RIGHT COLUMN -->
+                <div class="col-lg-8">
+
+                    <!-- Personal Details -->
+                    <div class="card section-card mb-4">
+                        <div class="card-header green">
+                            <i class="bi bi-person-lines-fill me-2"></i><strong>Personal Details</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="detail-label">Full Name (as per documents)</div>
+                                    <div class="detail-value">{{ kyc.full_name }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-label">Date of Birth</div>
+                                    <div class="detail-value">{{ kyc.date_of_birth|date:"d M Y"|default:"—" }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-label">Phone Number</div>
+                                    <div class="detail-value mono">{{ kyc.phone|default:"—" }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-label">Email Address</div>
+                                    <div class="detail-value">{{ kyc.email|default:"—" }}</div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="detail-label">Full Address</div>
+                                    <div class="detail-value">{{ kyc.address|default:"—" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Driving License -->
+                    <div class="card section-card mb-4">
+                        <div class="card-header orange">
+                            <i class="bi bi-card-text me-2"></i><strong>Driving License</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="detail-label">License Number</div>
+                                    <div class="detail-value mono">{{ kyc.driving_license_number|default:"Not provided" }}</div>
+                                </div>
+                                <div class="col-md-6 d-flex flex-column">
+                                    <div class="detail-label mb-2">License Photo</div>
+                                    {% if kyc.driving_license_photo %}
+                                    <div class="doc-photo-box">
+                                        <img src="{{ kyc.driving_license_photo.url }}" alt="Driving License Photo">
+                                        <a href="{{ kyc.driving_license_photo.url }}" target="_blank"
+                                            class="btn btn-sm btn-outline-primary rounded-pill mt-1">
+                                            <i class="bi bi-box-arrow-up-right me-1"></i>Open Full Size
+                                        </a>
+                                    </div>
+                                    {% else %}
+                                    <div class="doc-photo-box">
+                                        <i class="bi bi-image text-muted" style="font-size:2rem;"></i>
+                                        <span class="text-muted small">No photo uploaded</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Secondary Document -->
+                    <div class="card section-card mb-4">
+                        <div class="card-header">
+                            <i class="bi bi-file-earmark-person me-2"></i><strong>Secondary Identity Document</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="detail-label">Document Type</div>
+                                    <div class="detail-value">{{ kyc.get_secondary_doc_type_display|default:"Not provided" }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-label">Document Number</div>
+                                    <div class="detail-value mono">{{ kyc.secondary_doc_number|default:"Not provided" }}</div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="detail-label mb-2">Document Photo</div>
+                                    {% if kyc.secondary_doc_photo %}
+                                    <div class="doc-photo-box" style="max-width:400px;">
+                                        <img src="{{ kyc.secondary_doc_photo.url }}" alt="Secondary Document Photo">
+                                        <a href="{{ kyc.secondary_doc_photo.url }}" target="_blank"
+                                            class="btn btn-sm btn-outline-primary rounded-pill mt-1">
+                                            <i class="bi bi-box-arrow-up-right me-1"></i>Open Full Size
+                                        </a>
+                                    </div>
+                                    {% else %}
+                                    <div class="doc-photo-box" style="max-width:400px;">
+                                        <i class="bi bi-image text-muted" style="font-size:2rem;"></i>
+                                        <span class="text-muted small">No photo uploaded</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+
+        <!-- Sticky Action Bar (only shown when pending) -->
+        {% if kyc.status == 'pending' or kyc.status == 'rejected' %}
+        <div class="action-bar">
+            <a href="{% url 'owner_kyc' %}" class="btn btn-light border rounded-pill px-4 fw-medium">
+                <i class="bi bi-arrow-left me-1"></i> Back
+            </a>
+            {% if kyc.status == 'pending' %}
+            <button type="button" class="btn btn-danger rounded-pill px-4 fw-semibold shadow-sm" data-bs-toggle="modal"
+                data-bs-target="#rejectModal">
+                <i class="bi bi-x-lg me-2"></i>Reject KYC
+            </button>
+            {% endif %}
+            <button type="button" class="btn btn-success rounded-pill px-5 fw-semibold shadow" id="approveBtn">
+                <i class="bi bi-patch-check-fill me-2"></i>Approve KYC
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Reject Modal -->
+    {% if kyc.status == 'pending' %}
+    <div class="modal fade" id="rejectModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                <div class="modal-header border-bottom p-4" style="background:#fff5f5;">
+                    <h5 class="modal-title font-bold text-danger">
+                        <i class="bi bi-x-circle-fill me-2"></i>Reject KYC Application
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- KYC summary -->
+                    <div class="d-flex gap-3 align-items-center p-3 rounded-3 mb-4"
+                        style="background:#f8fafc;border:1px solid #e2e8f0;">
+                        <img src="https://ui-avatars.com/api/?name={{ kyc.user.first_name|default:kyc.user.username|urlencode }}&background=dc3545&color=fff&rounded=true"
+                            width="48" height="48" alt="">
+                        <div>
+                            <div class="fw-bold text-dark">{{ kyc.full_name }}</div>
+                            <div class="small text-muted">{{ kyc.user.email }} · #KYC-{{ kyc.id|stringformat:"04d" }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{% url 'owner_kyc_detail' kyc.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="reject">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark">
+                                Reason for Rejection <span class="text-danger">*</span>
+                            </label>
+                            <textarea name="rejection_reason" class="form-control border-0 bg-light py-3" rows="4"
+                                placeholder="Explain why this KYC is being rejected (e.g., blurry document photo, name mismatch, expired license…)"
+                                required></textarea>
+                            <div class="form-text text-muted mt-2">
+                                <i class="bi bi-info-circle me-1"></i>This reason will be visible to the user in the
+                                app.
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 pt-2 border-top mt-3">
+                            <button type="button" class="btn btn-light px-4 rounded-pill fw-medium border"
+                                data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger px-5 rounded-pill fw-semibold shadow-sm">
+                                <i class="bi bi-x-lg me-1"></i>Confirm Rejection
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endblock %}
+
+    {% block extra_js %}
+    <script>
+        // SweetAlert2 Approve KYC
+        document.getElementById('approveBtn').addEventListener('click', function() {
+            Swal.fire({
+                title: 'Approve KYC Application?',
+                html: `
+                    <div class="text-start" style="padding: 10px 0;">
+                        <div class="d-flex align-items-center gap-3 mb-4">
+                            <img src="https://ui-avatars.com/api/?name={{ kyc.user.first_name|default:kyc.user.username|urlencode }}&background=10b981&color=fff&rounded=true" 
+                                 width="60" height="60" class="rounded-circle shadow" style="border: 3px solid #10b981;">
+                            <div class="flex-grow-1">
+                                <div class="fw-bold fs-5 mb-1">{{ kyc.full_name|escapejs }}</div>
+                                <div class="text-muted small mb-2">{{ kyc.user.email|escapejs }}</div>
+                                <div class="badge bg-success" style="font-size: 12px; padding: 4px 8px;">#KYC-{{ kyc.id }}</div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <p class="mb-2 fs-6">Are you sure you want to <strong class="text-success">approve</strong> this KYC application?</p>
+                            <p class="text-muted small mb-0">This action will verify the user's identity and allow them to book vehicles.</p>
+                        </div>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: '<i class="bi bi-patch-check-fill me-2"></i>Yes, Approve KYC',
+                cancelButtonText: '<i class="bi bi-x-lg me-2"></i>Cancel',
+                reverseButtons: true,
+                showLoaderOnConfirm: true,
+                preConfirm: function() {
+                    // Create form and submit
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '{% url "owner_kyc_detail" kyc.id %}';
+                    
+                    // Add CSRF token
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                    if (csrfToken) {
+                        form.appendChild(csrfToken.cloneNode());
+                    }
+                    
+                    // Add action input
+                    const actionInput = document.createElement('input');
+                    actionInput.type = 'hidden';
+                    actionInput.name = 'action';
+                    actionInput.value = 'approve';
+                    form.appendChild(actionInput);
+                    
+                    // Submit form
+                    document.body.appendChild(form);
+                    form.submit();
+                    
+                    return new Promise(function(resolve) {
+                        setTimeout(function() { resolve(); }, 1000);
+                    });
+                }
+            });
+        });
+
+        // Enhanced Reject Modal with SweetAlert2 confirmation
+        document.querySelector('#rejectModal form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const rejectionReason = document.querySelector('textarea[name="rejection_reason"]').value.trim();
+            
+            if (!rejectionReason) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Rejection Reason Required',
+                    text: 'Please provide a reason for rejecting this KYC application.',
+                    confirmButtonColor: '#dc3545'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Reject KYC Application?',
+                html: `
+                    <div class="text-start" style="padding: 10px 0;">
+                        <div class="d-flex align-items-center gap-3 mb-4">
+                            <img src="https://ui-avatars.com/api/?name={{ kyc.user.first_name|default:kyc.user.username|urlencode }}&background=dc3545&color=fff&rounded=true" 
+                                 width="60" height="60" class="rounded-circle shadow" style="border: 3px solid #dc3545;">
+                            <div class="flex-grow-1">
+                                <div class="fw-bold fs-5 mb-1">{{ kyc.full_name|escapejs }}</div>
+                                <div class="text-muted small mb-2">{{ kyc.user.email|escapejs }}</div>
+                                <div class="badge bg-danger" style="font-size: 12px; padding: 4px 8px;">#KYC-{{ kyc.id }}</div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <p class="mb-2 fs-6">Are you sure you want to <strong class="text-danger">reject</strong> this KYC application?</p>
+                            <div class="alert alert-warning border-0" style="background: #fff3cd;">
+                                <strong>Rejection Reason:</strong><br>
+                                <span class="small">${rejectionReason}</span>
+                            </div>
+                            <p class="text-muted small mb-0">The user will need to resubmit their KYC with corrected information.</p>
+                        </div>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: '<i class="bi bi-x-lg me-2"></i>Yes, Reject KYC',
+                cancelButtonText: '<i class="bi bi-arrow-left me-2"></i>Cancel',
+                reverseButtons: true,
+                showLoaderOnConfirm: true,
+                preConfirm: function() {
+                    // Submit original form
+                    e.target.submit();
+                    
+                    return new Promise(function(resolve) {
+                        setTimeout(function() { resolve(); }, 1000);
+                    });
+                }
+            });
+        });
+
+        // Success notification for page load (if there's a success message)
+        // Messages are handled by Django template alerts above
+    </script>
+    {% endblock %}

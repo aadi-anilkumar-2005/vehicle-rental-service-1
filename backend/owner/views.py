@@ -9,12 +9,12 @@ def is_owner(user):
 
 def index_view(request):
     if is_owner(request.user):
-        return redirect('/dashboard.html')
+        return redirect('owner_dashboard')
     return render(request, 'owner/index.html')
 
 def login_view(request):
     if is_owner(request.user):
-        return redirect('/dashboard.html')
+        return redirect('owner_dashboard')
 
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -29,7 +29,7 @@ def login_view(request):
         if user is not None:
             if is_owner(user):
                 auth_login(request, user)
-                return redirect('/dashboard.html')
+                return redirect('owner_dashboard')
             else:
                 messages.error(request, "Access denied. You do not have owner privileges.")
         else:
@@ -42,10 +42,10 @@ def register_view(request):
 
 from django.db.models import Sum
 
-@login_required(login_url='/login.html')
+@login_required(login_url='owner_login')
 def dashboard_view(request):
     if not is_owner(request.user):
-        return redirect('/login.html')
+        return redirect('owner_login')
 
     from rentals.models import Booking, Vehicle, RentalShop
     
@@ -81,10 +81,10 @@ def dashboard_view(request):
 from rentals.models import Booking
 from staff.models import StaffTask
 
-@login_required(login_url='/login.html')
+@login_required(login_url='owner_login')
 def booking_management_view(request):
     if not is_owner(request.user):
-        return redirect('/login.html')
+        return redirect('owner_login')
 
     # Get the owner's shop (temporary fallback approach like in vehicle_management_view)
     shop = RentalShop.objects.annotate(v_count=models.Count('vehicles')).first()
@@ -135,10 +135,10 @@ def booking_management_view(request):
         'staff_members': staff_members
     })
 
-@login_required(login_url='/login.html')
+@login_required(login_url='owner_login')
 def staff_management_view(request):
     if not is_owner(request.user):
-        return redirect('/login.html')
+        return redirect('owner_login')
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -210,10 +210,10 @@ def staff_management_view(request):
 from django.db import models
 from rentals.models import Vehicle, RentalShop
 
-@login_required(login_url='/login.html')
+@login_required(login_url='owner_login')
 def vehicle_management_view(request):
     if not is_owner(request.user):
-        return redirect('/login.html')
+        return redirect('owner_login')
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -284,10 +284,10 @@ def vehicle_management_view(request):
 
 from django.contrib.auth import update_session_auth_hash
 
-@login_required(login_url='/login.html')
+@login_required(login_url='owner_login')
 def profile_view(request):
     if not is_owner(request.user):
-        return redirect('/login.html')
+        return redirect('owner_login')
 
     from rentals.models import RentalShop
     shop = RentalShop.objects.annotate(v_count=models.Count('vehicles')).first()
@@ -361,13 +361,13 @@ def profile_view(request):
 
 def logout_view(request):
     auth_logout(request)
-    return redirect('/login.html')
+    return redirect('owner_login')
 
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-@login_required(login_url='/login.html')
+@login_required(login_url='owner_login')
 def staff_api(request):
     if not is_owner(request.user):
         return JsonResponse({'error': 'Unauthorized'}, status=403)
@@ -421,10 +421,10 @@ def staff_api(request):
 
 # ── Chat View ──────────────────────────────────────────────────────────────────
 
-@login_required(login_url='/login.html')
+@login_required(login_url='owner_login')
 def chat_view(request):
     if not is_owner(request.user):
-        return redirect('/login.html')
+        return redirect('owner_login')
 
     from rentals.models import Conversation, Message, RentalShop
 
@@ -453,7 +453,9 @@ def chat_view(request):
                     )
                 except Exception as e:
                     messages.error(request, f"Error sending message: {e}")
-        return redirect(f'/chat.html?conv={request.POST.get("conversation_id", "")}')
+        conv_id = request.POST.get('conversation_id', '')
+        from django.urls import reverse
+        return redirect(f"{reverse('owner_chat')}?conv={conv_id}")
 
     conv_id = request.GET.get('conv')
     conversations = Conversation.objects.filter(shop=shop).select_related('user').order_by('-updated_at')
@@ -476,10 +478,10 @@ def chat_view(request):
 
 # ── Reviews View ───────────────────────────────────────────────────────────────
 
-@login_required(login_url='/login.html')
+@login_required(login_url='owner_login')
 def reviews_view(request):
     if not is_owner(request.user):
-        return redirect('/login.html')
+        return redirect('owner_login')
 
     from rentals.models import Review, RentalShop
     from django.utils import timezone
@@ -530,10 +532,10 @@ def reviews_view(request):
 
 # ── Complaints View ────────────────────────────────────────────────────────────
 
-@login_required(login_url='/login.html')
+@login_required(login_url='owner_login')
 def complaints_view(request):
     if not is_owner(request.user):
-        return redirect('/login.html')
+        return redirect('owner_login')
 
     from rentals.models import Complaint, RentalShop
 
@@ -579,3 +581,113 @@ def complaints_view(request):
         'complaints': all_complaints,
         'staff_members': staff_members,
     })
+
+
+# ── KYC Management View ────────────────────────────────────────────────────────
+
+@login_required(login_url='owner_login')
+def kyc_management_view(request):
+    if not is_owner(request.user):
+        return redirect('owner_login')
+
+    from rentals.models import KYCDocument
+    from django.utils import timezone
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        kyc_id = request.POST.get('kyc_id')
+
+        try:
+            kyc = KYCDocument.objects.get(id=kyc_id)
+
+            if action == 'approve':
+                kyc.status = 'verified'
+                kyc.verified_at = timezone.now()
+                kyc.rejection_reason = None
+                kyc.reviewed_by = request.user
+                kyc.save()
+                messages.success(request, f"KYC for {kyc.full_name} has been approved.")
+
+            elif action == 'reject':
+                reason = request.POST.get('rejection_reason', '').strip()
+                if not reason:
+                    messages.error(request, "Please provide a rejection reason.")
+                else:
+                    kyc.status = 'rejected'
+                    kyc.rejection_reason = reason
+                    kyc.verified_at = None
+                    kyc.reviewed_by = request.user
+                    kyc.save()
+                    messages.success(request, f"KYC for {kyc.full_name} has been rejected.")
+
+        except KYCDocument.DoesNotExist:
+            messages.error(request, "KYC record not found.")
+        except Exception as e:
+            messages.error(request, f"Error processing KYC action: {str(e)}")
+
+        return redirect('owner_kyc')
+
+    # GET – list KYC documents with optional status filter
+    status_filter = request.GET.get('status', '')
+    kyc_docs = KYCDocument.objects.select_related('user', 'reviewed_by').order_by('-submitted_at')
+
+    if status_filter in ('pending', 'verified', 'rejected', 'not_submitted'):
+        kyc_docs = kyc_docs.filter(status=status_filter)
+
+    counts = {
+        'total': KYCDocument.objects.count(),
+        'pending': KYCDocument.objects.filter(status='pending').count(),
+        'verified': KYCDocument.objects.filter(status='verified').count(),
+        'rejected': KYCDocument.objects.filter(status='rejected').count(),
+    }
+
+    return render(request, 'owner/kycManagement.html', {
+        'kyc_docs': kyc_docs,
+        'status_filter': status_filter,
+        'counts': counts,
+    })
+
+
+# ── KYC Detail View ────────────────────────────────────────────────────────────
+
+@login_required(login_url='owner_login')
+def kyc_detail_view(request, kyc_id):
+    if not is_owner(request.user):
+        return redirect('owner_login')
+
+    from rentals.models import KYCDocument
+    from django.utils import timezone
+
+    try:
+        kyc = KYCDocument.objects.select_related('user', 'reviewed_by').get(id=kyc_id)
+    except KYCDocument.DoesNotExist:
+        messages.error(request, "KYC record not found.")
+        return redirect('owner_kyc')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'approve':
+            kyc.status = 'verified'
+            kyc.verified_at = timezone.now()
+            kyc.rejection_reason = None
+            kyc.reviewed_by = request.user
+            kyc.save()
+            messages.success(request, f"KYC for {kyc.full_name} has been approved successfully.")
+            return redirect('owner_kyc')
+
+        elif action == 'reject':
+            reason = request.POST.get('rejection_reason', '').strip()
+            if not reason:
+                messages.error(request, "Please provide a rejection reason.")
+            else:
+                kyc.status = 'rejected'
+                kyc.rejection_reason = reason
+                kyc.verified_at = None
+                kyc.reviewed_by = request.user
+                kyc.save()
+                messages.success(request, f"KYC for {kyc.full_name} has been rejected.")
+                return redirect('owner_kyc')
+
+    return render(request, 'owner/kycDetail.html', {'kyc': kyc})
+

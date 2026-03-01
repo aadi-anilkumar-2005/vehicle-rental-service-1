@@ -1,347 +1,261 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'owner/base.html' %}
+{% load static %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vehicle Rental - Chat</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-    <style>
-        .chat-layout {
-            display: flex;
-            height: calc(100vh - 130px);
-            gap: 0;
-        }
+{% block title %}Vehicle Rental - Chat{% endblock %}
+{% block page_title %}Chat{% endblock %}
 
-        .conv-list {
-            width: 300px;
-            min-width: 280px;
-            border-right: 1px solid #e9ecef;
-            overflow-y: auto;
-            background: #fff;
-            border-radius: var(--radius-xl) 0 0 var(--radius-xl);
-        }
+{% block extra_css %}
+<style>
+    .chat-layout {
+        display: flex;
+        height: calc(100vh - 130px);
+        gap: 0;
+    }
 
-        .conv-item {
-            padding: 14px 16px;
-            border-bottom: 1px solid #f1f3f5;
-            cursor: pointer;
-            transition: background 0.15s;
-        }
+    .conv-list {
+        width: 300px;
+        min-width: 280px;
+        border-right: 1px solid #e9ecef;
+        overflow-y: auto;
+        background: #fff;
+        border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+    }
 
-        .conv-item:hover,
-        .conv-item.active {
-            background: #f0f4ff;
-        }
+    .conv-item {
+        padding: 14px 16px;
+        border-bottom: 1px solid #f1f3f5;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
 
-        .conv-item .conv-name {
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
+    .conv-item:hover,
+    .conv-item.active {
+        background: #f0f4ff;
+    }
 
-        .conv-item .conv-last {
-            font-size: 0.78rem;
-            color: #868e96;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+    .conv-item .conv-name {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
 
-        .conv-item .conv-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 4px;
-        }
+    .conv-item .conv-last {
+        font-size: 0.78rem;
+        color: #868e96;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
-        .conv-item .conv-time {
-            font-size: 0.72rem;
-            color: #adb5bd;
-        }
+    .conv-item .conv-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+    }
 
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #f8f9fa;
-            border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
-            overflow: hidden;
-        }
+    .conv-item .conv-time {
+        font-size: 0.72rem;
+        color: #adb5bd;
+    }
 
-        .chat-header {
-            padding: 16px 20px;
-            background: #fff;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+    .chat-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: #f8f9fa;
+        border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
+        overflow: hidden;
+    }
 
-        .messages-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
+    .chat-header {
+        padding: 16px 20px;
+        background: #fff;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
 
-        .msg-bubble {
-            max-width: 70%;
-            padding: 10px 14px;
-            border-radius: 16px;
-            font-size: 0.88rem;
-            line-height: 1.5;
-            word-break: break-word;
-        }
+    .messages-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
 
-        .msg-bubble.user {
-            background: #fff;
-            border: 1px solid #e9ecef;
-            border-bottom-left-radius: 4px;
-            align-self: flex-start;
-        }
+    .msg-bubble {
+        max-width: 70%;
+        padding: 10px 14px;
+        border-radius: 16px;
+        font-size: 0.88rem;
+        line-height: 1.5;
+        word-break: break-word;
+    }
 
-        .msg-bubble.owner {
-            background: #4F46E5;
-            color: #fff;
-            border-bottom-right-radius: 4px;
-            align-self: flex-end;
-        }
+    .msg-bubble.user {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-bottom-left-radius: 4px;
+        align-self: flex-start;
+    }
 
-        .msg-bubble.staff {
-            background: #e9fbe9;
-            border: 1px solid #c3e6cb;
-            border-bottom-left-radius: 4px;
-            align-self: flex-start;
-        }
+    .msg-bubble.owner {
+        background: #4F46E5;
+        color: #fff;
+        border-bottom-right-radius: 4px;
+        align-self: flex-end;
+    }
 
-        .msg-meta {
-            font-size: 0.7rem;
-            color: #868e96;
-            margin-top: 4px;
-        }
+    .msg-bubble.staff {
+        background: #e9fbe9;
+        border: 1px solid #c3e6cb;
+        border-bottom-left-radius: 4px;
+        align-self: flex-start;
+    }
 
-        .msg-meta.right {
-            text-align: right;
-        }
+    .msg-meta {
+        font-size: 0.7rem;
+        color: #868e96;
+        margin-top: 4px;
+    }
 
-        .chat-input-area {
-            padding: 14px 20px;
-            background: #fff;
-            border-top: 1px solid #e9ecef;
-        }
+    .msg-meta.right {
+        text-align: right;
+    }
 
-        .no-conv {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #adb5bd;
-        }
+    .chat-input-area {
+        padding: 14px 20px;
+        background: #fff;
+        border-top: 1px solid #e9ecef;
+    }
 
-        .unread-badge {
-            background: #4F46E5;
-            color: #fff;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 0.65rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-    </style>
-</head>
+    .no-conv {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #adb5bd;
+    }
 
-<body>
-    <!-- Sidebar -->
-    <nav class="sidebar" id="sidebar">
-        <div class="sidebar-brand">
-            <i class="bi bi-car-front-fill"></i>
-            <span>Owner</span>
-        </div>
-        <div class="sidebar-menu">
-            <a href="dashboard.html" class="sidebar-item" data-section="dashboard">
-                <i class="bi bi-grid-1x2"></i> Overview
-            </a>
-            <a href="staffManagement.html" class="sidebar-item" data-section="staff">
-                <i class="bi bi-people"></i> Staff
-            </a>
-            <a href="vehicleManagement.html" class="sidebar-item" data-section="vehicles">
-                <i class="bi bi-truck"></i> Vehicles
-            </a>
-            <a href="bookingManagement.html" class="sidebar-item" data-section="bookings">
-                <i class="bi bi-calendar-check"></i> Bookings
-            </a>
-            <a href="chat.html" class="sidebar-item active" data-section="chat">
-                <i class="bi bi-chat-dots"></i> Chat
-            </a>
-            <a href="reviews.html" class="sidebar-item" data-section="reviews">
-                <i class="bi bi-star-half"></i> Reviews
-            </a>
-            <a href="complaints.html" class="sidebar-item" data-section="complaints">
-                <i class="bi bi-exclamation-triangle"></i> Complaints
-            </a>
-            <a href="Profile.html" class="sidebar-item" data-section="profile">
-                <i class="bi bi-person-gear"></i> Settings
-            </a>
-        </div>
-        <div class="sidebar-footer">
-            <button
-                class="btn btn-sm text-white bg-white bg-opacity-10 w-full justify-center hover:bg-opacity-20 flex gap-2"
-                id="logoutBtn">
-                <i class="bi bi-box-arrow-right"></i> Logout
-            </button>
-        </div>
-    </nav>
+    .unread-badge {
+        background: #4F46E5;
+        color: #fff;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 0.65rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+{% endblock %}
 
-    <!-- Main Content -->
-    <div class="main-wrapper">
-        <!-- Topbar -->
-        <header class="topbar">
-            <div class="topbar-left">
-                <button class="mobile-toggle" id="mobileToggle">
-                    <i class="bi bi-list"></i>
-                </button>
-                <h1 class="topbar-title">Chat</h1>
-            </div>
-            <div class="topbar-right">
-                <button class="notifications-btn">
-                    <i class="bi bi-bell"></i>
-                    <span class="notifications-badge">3</span>
-                </button>
-                <div class="user-dropdown">
-                    <img src="https://ui-avatars.com/api/?name={{ request.user.first_name|default:request.user.username }}&background=4F46E5&color=fff"
-                        alt="User Avatar" class="avatar">
-                    <div class="user-info">
-                        <span class="user-name">{% if request.user.first_name %}{{ request.user.first_name }} {{
-                            request.user.last_name }}{% else %}{{ request.user.username }}{% endif %}</span>
-                        <span class="user-role user-email-display">{{ request.user.email }}</span>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Content Area -->
-        <main class="content-area animate-fade">
-            <div class="page-header mb-3">
-                <div>
-                    <h2 class="mb-1 font-bold">Customer Conversations</h2>
-                    <p class="text-muted small">View and reply to customer messages in real time.</p>
-                </div>
-            </div>
-
-            <div class="card border-0 shadow-sm" style="border-radius: var(--radius-xl); overflow: hidden;">
-                <div class="chat-layout">
-                    <!-- Conversation List -->
-                    <div class="conv-list">
-                        <div class="p-3 border-bottom bg-light">
-                            <input type="text" class="form-control form-control-sm bg-white border-0 shadow-sm"
-                                placeholder="Search conversations…" id="convSearch">
-                        </div>
-                        {% for conv in conversations %}
-                        <a href="?conv={{ conv.id }}" class="text-decoration-none text-dark">
-                            <div
-                                class="conv-item {% if selected_conversation and selected_conversation.id == conv.id %}active{% endif %}">
-                                <div class="conv-meta">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <img src="https://ui-avatars.com/api/?name={{ conv.user.first_name|default:conv.user.username|urlencode }}&background=random&color=fff&rounded=true"
-                                            width="32" height="32" alt="">
-                                        <span class="conv-name">{{ conv.user.first_name|default:conv.user.username }} {{ conv.user.last_name }}</span>
-                                    </div>
-                                    <span class="conv-time">{{ conv.updated_at|date:"M d" }}</span>
-                                </div>
-                                <div class="conv-last ps-5">
-                                    {% with last=conv.last_message %}
-                                    {% if last %}{{ last.text|truncatechars:40 }}{% else %}<em>No messages yet</em>{% endif %}
-                                    {% endwith %}
-                                </div>
-                            </div>
-                        </a>
-                        {% empty %}
-                        <div class="text-center text-muted py-5">
-                            <i class="bi bi-chat-left-dots display-5 mb-3 d-block"></i>
-                            <p>No conversations yet</p>
-                        </div>
-                        {% endfor %}
-                    </div>
-
-                    <!-- Chat Area -->
-                    {% if selected_conversation %}
-                    <div class="chat-area">
-                        <div class="chat-header">
-                            <img src="https://ui-avatars.com/api/?name={{ selected_conversation.user.first_name|default:selected_conversation.user.username|urlencode }}&background=4F46E5&color=fff&rounded=true"
-                                width="40" height="40" alt="">
-                            <div>
-                                <div class="fw-bold">{{ selected_conversation.user.first_name|default:selected_conversation.user.username }}
-                                    {{ selected_conversation.user.last_name }}</div>
-                                <div class="text-muted small">{{ selected_conversation.user.email }}</div>
-                            </div>
-                        </div>
-
-                        <div class="messages-container" id="messagesContainer">
-                            {% for msg in conversation_messages %}
-                            <div>
-                                <div class="msg-bubble {{ msg.sender_role }}">{{ msg.text }}</div>
-                                <div class="msg-meta {% if msg.sender_role == 'owner' %}right{% endif %}">
-                                    {% if msg.sender_role == 'owner' %}You (Owner){% elif msg.sender_role == 'staff' %}Staff{% else %}{{ msg.sender.first_name|default:msg.sender.username }}{% endif %}
-                                    · {{ msg.created_at|date:"M d, H:i" }}
-                                </div>
-                            </div>
-                            {% empty %}
-                            <div class="no-conv">
-                                <i class="bi bi-chat-left display-4 mb-2"></i>
-                                <p>No messages yet. Start the conversation!</p>
-                            </div>
-                            {% endfor %}
-                        </div>
-
-                        <div class="chat-input-area">
-                            <form method="POST" action="{% url 'owner_chat' %}" class="d-flex gap-2">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="send_message">
-                                <input type="hidden" name="conversation_id" value="{{ selected_conversation.id }}">
-                                <input type="text" name="text" class="form-control border-0 bg-light"
-                                    placeholder="Type a message…" autocomplete="off" required>
-                                <button type="submit" class="btn btn-primary px-4">
-                                    <i class="bi bi-send-fill"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="no-conv flex-grow-1">
-                        <i class="bi bi-chat-dots display-3 mb-3"></i>
-                        <h5>Select a conversation</h5>
-                        <p class="text-muted small">Choose from the list to view messages</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </main>
+{% block content %}
+<div class="page-header mb-3">
+    <div>
+        <h2 class="mb-1 font-bold">Customer Conversations</h2>
+        <p class="text-muted small">View and reply to customer messages in real time.</p>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{% static 'js/dashboard.js' %}"></script>
-    <script>
-        // Auto-scroll chat to bottom
-        const container = document.getElementById('messagesContainer');
-        if (container) container.scrollTop = container.scrollHeight;
+<div class="card border-0 shadow-sm" style="border-radius: var(--radius-xl); overflow: hidden;">
+    <div class="chat-layout">
+        <!-- Conversation List -->
+        <div class="conv-list">
+            <div class="p-3 border-bottom bg-light">
+                <input type="text" class="form-control form-control-sm bg-white border-0 shadow-sm"
+                    placeholder="Search conversations…" id="convSearch">
+            </div>
+            {% for conv in conversations %}
+            <a href="?conv={{ conv.id }}" class="text-decoration-none text-dark">
+                <div
+                    class="conv-item {% if selected_conversation and selected_conversation.id == conv.id %}active{% endif %}">
+                    <div class="conv-meta">
+                        <div class="d-flex align-items-center gap-2">
+                            <img src="https://ui-avatars.com/api/?name={{ conv.user.first_name|default:conv.user.username|urlencode }}&background=random&color=fff&rounded=true"
+                                width="32" height="32" alt="">
+                            <span class="conv-name">{{ conv.user.first_name|default:conv.user.username }} {{ conv.user.last_name }}</span>
+                        </div>
+                        <span class="conv-time">{{ conv.updated_at|date:"M d" }}</span>
+                    </div>
+                    <div class="conv-last ps-5">
+                        {% with last=conv.last_message %}
+                        {% if last %}{{ last.text|truncatechars:40 }}{% else %}<em>No messages yet</em>{% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </a>
+            {% empty %}
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-chat-left-dots display-5 mb-3 d-block"></i>
+                <p>No conversations yet</p>
+            </div>
+            {% endfor %}
+        </div>
 
-        // Search conversations
-        document.getElementById('convSearch').addEventListener('input', function () {
-            const q = this.value.toLowerCase();
-            document.querySelectorAll('.conv-item').forEach(item => {
-                item.closest('a').style.display = item.querySelector('.conv-name').textContent.toLowerCase().includes(q) ? '' : 'none';
-            });
+        <!-- Chat Area -->
+        {% if selected_conversation %}
+        <div class="chat-area">
+            <div class="chat-header">
+                <img src="https://ui-avatars.com/api/?name={{ selected_conversation.user.first_name|default:selected_conversation.user.username|urlencode }}&background=4F46E5&color=fff&rounded=true"
+                    width="40" height="40" alt="">
+                <div>
+                    <div class="fw-bold">{{ selected_conversation.user.first_name|default:selected_conversation.user.username }} {{ selected_conversation.user.last_name }}</div>
+                    <div class="text-muted small">{{ selected_conversation.user.email }}</div>
+                </div>
+            </div>
+            <div class="messages-container" id="messagesContainer">
+                {% for msg in conversation_messages %}
+                <div>
+                    <div class="msg-bubble {{ msg.sender_role }}">{{ msg.text }}</div>
+                    <div class="msg-meta {% if msg.sender_role == 'owner' %}right{% endif %}">
+                        {% if msg.sender_role == 'owner' %}You (Owner){% elif msg.sender_role == 'staff' %}Staff{% else %}{{ msg.sender.first_name|default:msg.sender.username }}{% endif %}
+                        · {{ msg.created_at|date:"M d, H:i" }}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="no-conv">
+                    <i class="bi bi-chat-left display-4 mb-2"></i>
+                    <p>No messages yet. Start the conversation!</p>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="chat-input-area">
+                <form method="POST" action="{% url 'owner_chat' %}" class="d-flex gap-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="send_message">
+                    <input type="hidden" name="conversation_id" value="{{ selected_conversation.id }}">
+                    <input type="text" name="text" class="form-control border-0 bg-light" placeholder="Type a message…"
+                        autocomplete="off" required>
+                    <button type="submit" class="btn btn-primary px-4"><i class="bi bi-send-fill"></i></button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="no-conv flex-grow-1">
+            <i class="bi bi-chat-dots display-3 mb-3"></i>
+            <h5>Select a conversation</h5>
+            <p class="text-muted small">Choose from the list to view messages</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const container = document.getElementById('messagesContainer');
+    if (container) container.scrollTop = container.scrollHeight;
+
+    document.getElementById('convSearch').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('.conv-item').forEach(item => {
+            item.closest('a').style.display = item.querySelector('.conv-name').textContent.toLowerCase().includes(q) ? '' : 'none';
         });
-    </script>
-</body>
-
-</html>
+    });
+</script>
+{% endblock %}
